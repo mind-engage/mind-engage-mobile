@@ -223,6 +223,7 @@ class QuizPage extends StatefulWidget {
 class _QuizPageState extends State<QuizPage> {
   int level = 0; // Initialize with the basic level
   Map<String, dynamic> quizData = {};
+  bool _isLoading = false; // Initialize loading state
 
   @override
   void initState() {
@@ -233,24 +234,28 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void fetchQuiz(int lvl) async {
+    setState(() {
+      _isLoading = true; // Set loading to true
+    });
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/quiz?session_id=${widget.sessionId}&topic_id=${widget.topicId}&level=$lvl');
     var response = await http.get(url);
-    if (response.statusCode == 200) {
-      setState(() {
+    setState(() {
+      _isLoading = false; // Set loading to false
+      if (response.statusCode == 200) {
         quizData = jsonDecode(response.body);
         level = lvl; // Update the current level
-      });
-    } else {
-      Fluttertoast.showToast(
-          msg: "Failed to fetch quiz data.",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0
-      );
-    }
+      } else {
+        Fluttertoast.showToast(
+            msg: "Failed to fetch quiz data.",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0
+        );
+      }
+    });
   }
 
   void _submitAnswer(int? selectedIndex) async {
@@ -265,7 +270,9 @@ class _QuizPageState extends State<QuizPage> {
       );
       return;
     }
-
+    setState(() {
+      _isLoading = true; // Set loading to true
+    });
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/submit_answer');
     var response = await http.post(url,
@@ -276,8 +283,10 @@ class _QuizPageState extends State<QuizPage> {
           'level': level,
           'answer': selectedIndex,
         }));
+    setState(() {
+      _isLoading = false; // Set loading to false
+    });
     var data = jsonDecode(response.body);
-
     Fluttertoast.showToast(
         msg: data['message'],
         toastLength: Toast.LENGTH_SHORT,
@@ -293,29 +302,46 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void fetchConceptualClarity(int topicId, int level, int? answer) async {
+    setState(() {
+      _isLoading = true; // Indicate loading while fetching data
+    });
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/conceptual_clarity?session_id=${widget.sessionId}&topic_id=$topicId&level=$level&level=level&answer=$answer');  // Update with actual session id
+    var url = Uri.parse('$baseUrl/conceptual_clarity?session_id=${widget.sessionId}&topic_id=$topicId&level=$level&answer=$answer');
     var response = await http.get(url);
-    var data = jsonDecode(response.body);
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conceptual Clarity'),
-          content: SingleChildScrollView(
-            child: Text(data['concept'], style: TextStyle(height: 1.5)),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+    setState(() {
+      _isLoading = false; // Reset loading indicator after fetch
+    });
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Conceptual Clarity'),
+            content: SingleChildScrollView(
+              child: Text(data['concept'], style: TextStyle(height: 1.5)),
             ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                child: const Text('Close'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      Fluttertoast.showToast(
+          msg: "Failed to fetch conceptual clarity.",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0
+      );
+    }
   }
 
   @override
@@ -339,37 +365,41 @@ class _QuizPageState extends State<QuizPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Question: $question', style: Theme.of(context).textTheme.titleMedium),
-              SizedBox(height: 20),
-              Text('Choose your answer:', style: Theme.of(context).textTheme.titleLarge),
-              ...choices.asMap().entries.map((entry) {
-                int idx = entry.key;
-                String choice = entry.value;
-                return ListTile(
-                  title: Text(choice),
-                  leading: Radio<int>(
-                    value: idx,
-                    groupValue: quizData['selectedChoice'],
-                    onChanged: (int? value) {
-                      setState(() {
-                        quizData['selectedChoice'] = value;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-              ElevatedButton(
-                onPressed: () => _submitAnswer(quizData['selectedChoice']),
-                child: const Text('Submit Answer'),
-              ),
-            ],
-          ),
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : buildQuizContent(choices, question),
+    );
+  }
+
+  Widget buildQuizContent(List<String> choices, String question) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Question: $question', style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: 20),
+            Text('Choose your answer:', style: Theme.of(context).textTheme.titleLarge),
+            ...choices.asMap().entries.map((entry) {
+              int idx = entry.key;
+              String choice = entry.value;
+              return ListTile(
+                title: Text(choice),
+                leading: Radio<int>(
+                  value: idx,
+                  groupValue: quizData['selectedChoice'],
+                  onChanged: (int? value) {
+                    setState(() {
+                      quizData['selectedChoice'] = value;
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+            ElevatedButton(
+              onPressed: () => _submitAnswer(quizData['selectedChoice']),
+              child: const Text('Submit Answer'),
+            ),
+          ],
         ),
       ),
     );
