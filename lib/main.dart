@@ -103,32 +103,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-/*
-  void submitAnswer(String topicId, String userAnswer) async {
-    String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/submit_answer');
-    var response = await http.post(url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'session_id': _sessionId,
-          'topic_id': topicId,
-          'answer': userAnswer,
-        }));
-    var data = jsonDecode(response.body);
-    Fluttertoast.showToast(
-        msg: data['result'],
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0
-    );
-    if (data['result'] != 'Correct!') {
-      fetchConceptualClarity(topicId);
-    }
-  }
-*/
+
   void fetchConceptualClarity(String topicId) async {
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/conceptual_clarity?topic_id=$topicId&session_id=$_sessionId&answer=a');
