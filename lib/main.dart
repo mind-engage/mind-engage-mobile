@@ -258,6 +258,28 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
+  void showCongratulationsPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to close dialog
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Congratulations!'),
+          content: Text('You have completed the highest level of the quiz.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); // Exit the quiz page
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _submitAnswer(int? selectedIndex) async {
     if (selectedIndex == null) {
       Fluttertoast.showToast(
@@ -296,7 +318,14 @@ class _QuizPageState extends State<QuizPage> {
         fontSize: 16.0
     );
 
-    if (data['result'] != 'true') {
+    // If answer is correct and level is not maximum, increment level or show congratulations
+    if (data['result'] == 'true') {
+      if (level < 2) {
+        fetchQuiz(level + 1);
+      } else {
+        showCongratulationsPopup();
+      }
+    } else {
       fetchConceptualClarity(widget.topicId, level, selectedIndex);
     }
   }
@@ -348,11 +377,11 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     List<String> choices = List<String>.from(quizData['choices'] ?? []);
     String question = quizData['question'] ?? "No question available";
-    String summary = quizData['summary'] ?? "No summary available"; // Get the summary from quizData
+    String summary = quizData['summary'] ?? "No summary available";
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quiz Details'),
+        title: Text('Quiz Details - ${['Basic', 'Intermediate', 'Advanced'][level]}'),
         actions: [
           PopupMenuButton<int>(
             onSelected: fetchQuiz,
@@ -366,10 +395,9 @@ class _QuizPageState extends State<QuizPage> {
           ),
         ],
       ),
-      body: _isLoading ? Center(child: CircularProgressIndicator()) : buildQuizContent(choices, question, summary), // Pass the summary as an argument
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : buildQuizContent(choices, question, summary),
     );
   }
-
 
   Widget buildQuizContent(List<String> choices, String question, String summary) {
     return SingleChildScrollView(
@@ -378,7 +406,7 @@ class _QuizPageState extends State<QuizPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Summary: $summary', style: Theme.of(context).textTheme.bodyLarge), // Display the summary first
+            Text('Summary: $summary', style: Theme.of(context).textTheme.bodyLarge),
             SizedBox(height: 20),
             Text('Question: $question', style: Theme.of(context).textTheme.titleMedium),
             SizedBox(height: 20),
