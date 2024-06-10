@@ -104,33 +104,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void fetchConceptualClarity(String topicId) async {
-    String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/conceptual_clarity?topic_id=$topicId&session_id=$_sessionId&answer=a');
-    var response = await http.get(url);
-    var data = jsonDecode(response.body);
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conceptual Clarity'),
-          content: SingleChildScrollView(
-            child: Text(data['concept'], style: TextStyle(height: 1.5)), // Enhanced for better readability
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,7 +136,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
 class TopicsPage extends StatefulWidget {
   final List<dynamic> topics;
   final String sessionId;
@@ -188,7 +160,19 @@ class _TopicsPageState extends State<TopicsPage> {
       );
     } else {
       // Handle error or show an alert/message
-      print('Failed to fetch quiz');
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Failed to fetch quiz for the selected topic.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -198,18 +182,29 @@ class _TopicsPageState extends State<TopicsPage> {
       appBar: AppBar(
         title: const Text('Topics'),
       ),
-      body: ListView.builder(
+      body: ListView.separated(
         itemCount: widget.topics.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(widget.topics[index]['topic_title']),
-            onTap: () => fetchQuizAndNavigate(widget.topics[index]['topic_id']),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 8.0),
+            child: ListTile(
+              title: Text(widget.topics[index]['topic_title']),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => fetchQuizAndNavigate(widget.topics[index]['topic_id']),
+              tileColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              hoverColor: Colors.blue.shade100,
+            ),
           );
         },
+        separatorBuilder: (context, index) => Divider(),
       ),
     );
   }
 }
+
 
 class QuizPage extends StatefulWidget {
   final String sessionId;
