@@ -348,6 +348,7 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     List<String> choices = List<String>.from(quizData['choices'] ?? []);
     String question = quizData['question'] ?? "No question available";
+    String summary = quizData['summary'] ?? "No summary available"; // Get the summary from quizData
 
     return Scaffold(
       appBar: AppBar(
@@ -365,17 +366,20 @@ class _QuizPageState extends State<QuizPage> {
           ),
         ],
       ),
-      body: _isLoading ? Center(child: CircularProgressIndicator()) : buildQuizContent(choices, question),
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : buildQuizContent(choices, question, summary), // Pass the summary as an argument
     );
   }
 
-  Widget buildQuizContent(List<String> choices, String question) {
+
+  Widget buildQuizContent(List<String> choices, String question, String summary) {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            Text('Summary: $summary', style: Theme.of(context).textTheme.bodyLarge), // Display the summary first
+            SizedBox(height: 20),
             Text('Question: $question', style: Theme.of(context).textTheme.titleMedium),
             SizedBox(height: 20),
             Text('Choose your answer:', style: Theme.of(context).textTheme.titleLarge),
