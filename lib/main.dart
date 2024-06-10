@@ -175,7 +175,7 @@ class TopicsPage extends StatefulWidget {
 
 class _TopicsPageState extends State<TopicsPage> {
 
-  void fetchQuizAndNavigate(String topicId) async {
+  void fetchQuizAndNavigate(int topicId) async {
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/quiz?session_id=${widget.sessionId}&topic_id=$topicId'); // Adjust the URL as needed
     var response = await http.get(url);
@@ -183,7 +183,7 @@ class _TopicsPageState extends State<TopicsPage> {
       var quizData = jsonDecode(response.body);
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => QuizPage(sessionId: widget.sessionId, quizData: quizData),
+          builder: (context) => QuizPage(sessionId: widget.sessionId, topicId: topicId),
         ),
       );
     } else {
@@ -203,7 +203,7 @@ class _TopicsPageState extends State<TopicsPage> {
         itemBuilder: (context, index) {
           return ListTile(
             title: Text(widget.topics[index]['topic_title']),
-            onTap: () => fetchQuizAndNavigate(widget.topics[index]['topic_id'].toString()),
+            onTap: () => fetchQuizAndNavigate(widget.topics[index]['topic_id']),
           );
         },
       ),
@@ -212,19 +212,49 @@ class _TopicsPageState extends State<TopicsPage> {
 }
 
 class QuizPage extends StatefulWidget {
-  final Map<String, dynamic> quizData;
   final String sessionId;
-  const QuizPage({Key? key, required this.sessionId, required this.quizData}) : super(key: key);
+  final int topicId;
+  const QuizPage({super.key, required this.sessionId, required this.topicId});
 
   @override
   _QuizPageState createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
-  int? _selectedChoiceIndex;
+  int level = 0; // Initialize with the basic level
+  Map<String, dynamic> quizData = {};
 
-  void _submitAnswer() async {
-    if (_selectedChoiceIndex == null) {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchQuiz(level);
+    });
+  }
+
+  void fetchQuiz(int lvl) async {
+    String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
+    var url = Uri.parse('$baseUrl/quiz?session_id=${widget.sessionId}&topic_id=${widget.topicId}&level=$lvl');
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      setState(() {
+        quizData = jsonDecode(response.body);
+        level = lvl; // Update the current level
+      });
+    } else {
+      Fluttertoast.showToast(
+          msg: "Failed to fetch quiz data.",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0
+      );
+    }
+  }
+
+  void _submitAnswer(int? selectedIndex) async {
+    if (selectedIndex == null) {
       Fluttertoast.showToast(
           msg: "Please select an answer before submitting.",
           toastLength: Toast.LENGTH_SHORT,
@@ -237,17 +267,14 @@ class _QuizPageState extends State<QuizPage> {
     }
 
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    int topicId = widget.quizData['topic_id'];
-    int level = widget.quizData['level'];
-
     var url = Uri.parse('$baseUrl/submit_answer');
     var response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'session_id': widget.sessionId, // Update with actual session id
-          'topic_id': topicId,
+          'session_id': widget.sessionId,
+          'topic_id': widget.topicId,
           'level': level,
-          'answer': _selectedChoiceIndex,
+          'answer': selectedIndex,
         }));
     var data = jsonDecode(response.body);
 
@@ -261,7 +288,7 @@ class _QuizPageState extends State<QuizPage> {
     );
 
     if (data['result'] != 'true') {
-      fetchConceptualClarity(topicId, level, _selectedChoiceIndex);
+      fetchConceptualClarity(widget.topicId, level, selectedIndex);
     }
   }
 
@@ -293,13 +320,24 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> choices = List<String>.from(widget.quizData['choices']);
-    String question = widget.quizData['question'];
-    String summary = widget.quizData['summary'];
+    List<String> choices = List<String>.from(quizData['choices'] ?? []);
+    String question = quizData['question'] ?? "No question available";
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quiz Details'),
+        actions: [
+          PopupMenuButton<int>(
+            onSelected: fetchQuiz,
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem(value: 0, child: Text('Basic')),
+                PopupMenuItem(value: 1, child: Text('Intermediate')),
+                PopupMenuItem(value: 2, child: Text('Advanced')),
+              ];
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -307,16 +345,9 @@ class _QuizPageState extends State<QuizPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('Summary:', style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: 8),
-              Text(summary, style: Theme.of(context).textTheme.titleMedium),
-              SizedBox(height: 16),
-              Text('Question:', style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: 8),
-              Text(question, style: Theme.of(context).textTheme.titleMedium),
+              Text('Question: $question', style: Theme.of(context).textTheme.titleMedium),
               SizedBox(height: 20),
               Text('Choose your answer:', style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: 8),
               ...choices.asMap().entries.map((entry) {
                 int idx = entry.key;
                 String choice = entry.value;
@@ -324,17 +355,17 @@ class _QuizPageState extends State<QuizPage> {
                   title: Text(choice),
                   leading: Radio<int>(
                     value: idx,
-                    groupValue: _selectedChoiceIndex,
+                    groupValue: quizData['selectedChoice'],
                     onChanged: (int? value) {
                       setState(() {
-                        _selectedChoiceIndex = value;
+                        quizData['selectedChoice'] = value;
                       });
                     },
                   ),
                 );
               }).toList(),
               ElevatedButton(
-                onPressed: _submitAnswer,
+                onPressed: () => _submitAnswer(quizData['selectedChoice']),
                 child: const Text('Submit Answer'),
               ),
             ],
@@ -344,4 +375,3 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 }
-
