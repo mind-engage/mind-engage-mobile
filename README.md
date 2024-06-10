@@ -1,6 +1,3 @@
-Here's a suggested README.md file for the `mind-engage-mobile` repository. This template provides a clear structure for presenting your mobile application's details, including an introduction, how to set it up, and how to contribute.
-
-```markdown
 # MindEngage Mobile
 
 ## Introduction
@@ -58,10 +55,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 Project Link: [https://github.com/mind-engage/mind-engage-mobile](https://github.com/mind-engage/mind-engage-mobile)
 
 ## Acknowledgments
-- NVIDIA NIM Generative AI
-- LangGraph for knowledge query pipelines
+- NVIDIA NIM Generative AI inference platform
+- LangChain/LangGraph for knowledge query pipelines
 - All contributors and developers who have helped shape this project.
-
-```
-
-This README.md template includes comprehensive sections that outline the project, provide setup instructions, explain how to use the application, and encourage community contributions. Adjust the content as necessary to better fit your project's specifics or any additional instructions you might want to include.
