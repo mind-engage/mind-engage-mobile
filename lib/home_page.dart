@@ -42,7 +42,6 @@ class _HomePageState extends State<HomePage> {
     var response = await http.get(url);
     var data = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
       setState(() {
         lectures = data;
         _showDisclaimer = false;  // Hide disclaimer and button after fetching lectures
@@ -75,28 +74,43 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (_showDisclaimer)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "Disclaimer: MindEngage utilizes advanced generative AI technologies. "
-                      "Please note that this application is a Proof of Concept (PoC) and intended "
-                      "for demonstration purposes only. The content and interactions may not always "
-                      "reflect accurate or verified information.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.red,
+            if (_showDisclaimer) // Conditional block to show the welcome message and disclaimer
+              const Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Welcome to MindEngage! Immerse yourself in a world of interactive learning. Discover dynamic quizzes, utilize the Socratic method for enriched insights, and experience a tailored educational journey. Ideal for students and lifelong learners eager to expand their knowledge.\n\nA Generative AI Agent powered by NVIDIA's NIM and LangGraph.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Disclaimer: MindEngage utilizes advanced generative AI technologies. "
+                          "Please note that this application is a Proof of Concept (PoC) and intended "
+                          "for demonstration purposes only. The content and interactions may not always "
+                          "reflect accurate or verified information.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            if (_showDisclaimer)
+            if (_showDisclaimer) // Button to agree and proceed, which will hide the welcome and disclaimer
               ElevatedButton(
                 onPressed: fetchLectures,
                 child: const Text('Agree and Proceed'),
               ),
-            if (!_showDisclaimer)  // Only show if disclaimer has been agreed to
+            if (!_showDisclaimer) // Only show if disclaimer has been agreed to
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
@@ -104,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
-            if (!_showDisclaimer)  // List lectures if disclaimer is not shown
+            if (!_showDisclaimer) // List lectures if disclaimer is not shown
               Expanded(
                 child: ListView.separated(
                   itemCount: lectures.length,
@@ -112,12 +126,12 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 8.0),
-                      child:ListTile(
+                      child: ListTile(
                         title: Padding(
                           padding: const EdgeInsets.only(bottom: 10.0),
                           child: Text(lectures[index]['lecture_title']),
                         ),
-                        subtitle:Text("License: ${lectures[index]['license']}"),
+                        subtitle: Text("License: ${lectures[index]['license']}"),
                         trailing: Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () => fetchTopics(lectures[index]['lecture_id'].toString()),
                         tileColor: Colors.white,
