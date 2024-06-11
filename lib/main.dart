@@ -58,8 +58,7 @@ class _HomePageState extends State<HomePage> {
   String _sessionId = "";
   List<dynamic> lectures = [];
   List<dynamic> topics = [];
-  Map<String, dynamic>? quiz;
-  //String baseUrl = 'http://192.168.0.140:8080'; // Change to your server's IP address if needed
+  bool _showDisclaimer = true;  // State to control visibility of the disclaimer and button
 
   @override
   void initState() {
@@ -84,9 +83,13 @@ class _HomePageState extends State<HomePage> {
     var url = Uri.parse('$baseUrl/lectures?session_id=$_sessionId');
     var response = await http.get(url);
     var data = jsonDecode(response.body);
-    setState(() {
-      lectures = data;
-    });
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      setState(() {
+        lectures = data;
+        _showDisclaimer = false;  // Hide disclaimer and button after fetching lectures
+      });
+    }
   }
 
   void fetchTopics(String lectureId) async {
@@ -114,27 +117,66 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              onPressed: fetchLectures,
-              child: const Text('Load Lectures'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: lectures.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(lectures[index]['lecture_title']),
-                    onTap: () => fetchTopics(lectures[index]['lecture_id'].toString()),
-                  );
-                },
+            if (_showDisclaimer)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "Disclaimer: MindEngage utilizes advanced generative AI technologies. "
+                      "Please note that this application is a Proof of Concept (PoC) and intended "
+                      "for demonstration purposes only. The content and interactions may not always "
+                      "reflect accurate or verified information.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.red,
+                  ),
+                ),
               ),
-            ),
+            if (_showDisclaimer)
+              ElevatedButton(
+                onPressed: fetchLectures,
+                child: const Text('Agree and Proceed'),
+              ),
+            if (!_showDisclaimer)  // Only show if disclaimer has been agreed to
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Available Lectures',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            if (!_showDisclaimer)  // List lectures if disclaimer is not shown
+              Expanded(
+                child: ListView.separated(
+                  itemCount: lectures.length,
+                  separatorBuilder: (context, index) => Divider(),
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 8.0),
+                      child:ListTile(
+                        title: Text(lectures[index]['lecture_title']),
+                        subtitle:Text("Attribution: Ramamurti Shankar, Fundamentals of Physics I (Yale University: Open Yale Courses), http://oyc.yale.edu (Accessed Date). License: Creative Commons BY-NC-SA"),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () => fetchTopics(lectures[index]['lecture_id'].toString()),
+                        tileColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        hoverColor: Colors.blue.shade100,
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 }
+
+
 
 class TopicsPage extends StatefulWidget {
   final List<dynamic> topics;
