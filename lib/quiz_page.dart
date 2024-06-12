@@ -32,7 +32,7 @@ class _QuizPageState extends State<QuizPage> {
     });
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/quiz?session_id=${widget.sessionId}&topic_id=${widget.topicId}&level=$lvl');
-    var response = await http.get(url);
+    var response =              await http.get(url);
     setState(() {
       _isLoading = false; // Set loading to false
       if (response.statusCode == 200) {
@@ -174,7 +174,7 @@ class _QuizPageState extends State<QuizPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Quiz Details - ${['Basic', 'Intermediate', 'Advanced'][level]}'),
+        title: Text('Quiz  - ${['Basic', 'Intermediate', 'Advanced'][level]}'),
         actions: [
           PopupMenuButton<int>(
             onSelected: fetchQuiz,
