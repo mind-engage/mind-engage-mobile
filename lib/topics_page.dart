@@ -18,7 +18,7 @@ class TopicsPage extends StatefulWidget {
 
 class _TopicsPageState extends State<TopicsPage> {
 
-  void navigateToQuiz(int topicId, topicTitle) async {
+  void navigateToQuiz(int topicId, String topicTitle) async {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => QuizPage(sessionId: widget.sessionId, topicId: topicId, topicTitle: topicTitle),
@@ -31,25 +31,30 @@ class _TopicsPageState extends State<TopicsPage> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Topics',
-        topicName: widget.lectureTitle
+        lectureName: widget.lectureTitle, // Use lectureName for clarity
       ),
       body: ListView.separated(
         itemCount: widget.topics.length,
-        separatorBuilder: (context, index) => const Divider(height: 0), // Use Divider for better visual separation
+        separatorBuilder: (context, index) => const Divider(
+          height: 1,
+          indent: 16, // Indented divider
+          thickness: 0.8, // Slightly thicker divider
+        ),
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Add padding to the title
-              child: Text(
-                widget.topics[index]['topic_title'],
-                style: const TextStyle(fontSize: 18), // Increase font size
-              ),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 20), // Use a larger arrow icon
+          return InkWell( // Add InkWell for tap feedback
             onTap: () => navigateToQuiz(widget.topics[index]['topic_id'], widget.topics[index]['topic_title']),
-            tileColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0),
+            child: Container(
+              color: Colors.transparent, // For ripple effect
+              child: ListTile(
+                title: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  child: Text(
+                    widget.topics[index]['topic_title'],
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 20),
+              ),
             ),
           );
         },
