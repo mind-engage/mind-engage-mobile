@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void fetchTopics(String lectureId) async {
+  void fetchTopics(String lectureId, String lectureTitle) async {
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/topics?lecture_id=$lectureId&session_id=$_sessionId');
     var response = await http.get(url);
@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> {
     });
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => TopicsPage(sessionId: _sessionId, topics: topics),
+        builder: (context) => TopicsPage(sessionId: _sessionId, topics: topics, lectureTitle: lectureTitle),
       ),
     );
   }
@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
                 title: Text(lectures[index]['lecture_title']),
                 subtitle: Text("License: ${lectures[index]['license']}"),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () => fetchTopics(lectures[index]['lecture_id'].toString()),
+                onTap: () => fetchTopics(lectures[index]['lecture_id'].toString(), lectures[index]['lecture_title']),
                 tileColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
