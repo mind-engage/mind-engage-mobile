@@ -4,11 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'quiz_page.dart';
 import 'url_provider.dart';
+import 'custom_app_bar.dart';
 
 class TopicsPage extends StatefulWidget {
   final List<dynamic> topics;
   final String sessionId;
-  const TopicsPage({super.key, required this.sessionId, required this.topics});
+  final String lectureTitle;
+  const TopicsPage({super.key, required this.sessionId, required this.topics, required this.lectureTitle});
 
   @override
   _TopicsPageState createState() => _TopicsPageState();
@@ -16,10 +18,10 @@ class TopicsPage extends StatefulWidget {
 
 class _TopicsPageState extends State<TopicsPage> {
 
-  void navigateToQuiz(int topicId) async {
+  void navigateToQuiz(int topicId, topicTitle) async {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => QuizPage(sessionId: widget.sessionId, topicId: topicId),
+        builder: (context) => QuizPage(sessionId: widget.sessionId, topicId: topicId, topicTitle: topicTitle),
       ),
     );
   }
@@ -27,27 +29,30 @@ class _TopicsPageState extends State<TopicsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Topics'),
+      appBar: CustomAppBar(
+        title: 'Topics',
+        topicName: widget.lectureTitle
       ),
       body: ListView.separated(
         itemCount: widget.topics.length,
+        separatorBuilder: (context, index) => const Divider(height: 0), // Use Divider for better visual separation
         itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 8.0),
-            child: ListTile(
-              title: Text(widget.topics[index]['topic_title']),
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => navigateToQuiz(widget.topics[index]['topic_id']),
-              tileColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+          return ListTile(
+            title: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Add padding to the title
+              child: Text(
+                widget.topics[index]['topic_title'],
+                style: const TextStyle(fontSize: 18), // Increase font size
               ),
-              hoverColor: Colors.blue.shade100,
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 20), // Use a larger arrow icon
+            onTap: () => navigateToQuiz(widget.topics[index]['topic_id'], widget.topics[index]['topic_title']),
+            tileColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
             ),
           );
         },
-        separatorBuilder: (context, index) => Divider(),
       ),
     );
   }
