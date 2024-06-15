@@ -20,11 +20,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start, // Align to the start
         children: [
-          Text(title),
+          Text(title, style: const TextStyle(color: Colors.white)),
           if (lectureName != null)
-            Text(lectureName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300)),
+            Text(lectureName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
           if (topicName != null)
-            Text(topicName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300)),
+            Text(topicName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
         ],
       ),
       backgroundColor: Colors.deepPurpleAccent,

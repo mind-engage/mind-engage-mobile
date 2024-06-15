@@ -1,5 +1,5 @@
 name: mind_engage
-description: "MindEngage is a mobile education platform that enhances learning through interactive quizzes, Socratic methods, and advanced AI technologies like LangGraph and NVIDIA's NIM Generative AI.."
+description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,6 +36,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
+  flutter_dotenv: 5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -61,7 +62,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/splash_screen.png
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

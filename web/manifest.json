@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "MindEngage is a mobile education platform that enhances learning through interactive quizzes, Socratic methods, and advanced AI technologies like LangGraph and NVIDIA's NIM Generative AI..",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

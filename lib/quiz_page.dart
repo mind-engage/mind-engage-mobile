@@ -117,15 +117,17 @@ class _QuizPageState extends State<QuizPage> {
         fontSize: 16.0,
       );
 
-      if (data['result'] == 'true') {
-        if (level < 2) {
-          fetchQuiz(level + 1);
+      Future.delayed(const Duration(milliseconds: 3000), () { // Adjust delay as needed
+        if (data['result'] == 'true') {
+          if (level < 2) {
+            fetchQuiz(level + 1);
+          } else {
+            showCongratulationsPopup();
+          }
         } else {
-          showCongratulationsPopup();
+          fetchConceptualClarity(widget.topicId, level, selectedIndex);
         }
-      } else {
-        fetchConceptualClarity(widget.topicId, level, selectedIndex);
-      }
+      });
     } else {
       // Handle error from the backend
       Fluttertoast.showToast(
@@ -216,25 +218,35 @@ class _QuizPageState extends State<QuizPage> {
   Widget buildQuizContent(List<String> choices, String question, String summary) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'Summary: $summary',
-              style: Theme.of(context).textTheme.bodyLarge,
+              'Summary:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              summary,
+              style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 20),
             Text(
-              'Question: $question',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Question:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              question,
+              style: TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 20),
             Text(
               'Choose your answer:',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             ...choices.asMap().entries.map((entry) {
               int idx = entry.key;
               String choice = entry.value;
@@ -250,17 +262,22 @@ class _QuizPageState extends State<QuizPage> {
                 // Other properties of RadioListTile for styling, etc.
               );
             }).toList(),
-            const SizedBox(height: 20), // Spacing
+            const SizedBox(height: 30),
             Center( // Center the button
               child: ElevatedButton(
                 onPressed: () => _submitAnswer(quizData['selectedChoice']),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   textStyle: const TextStyle(fontSize: 18),
+                  backgroundColor: Colors.blueAccent, // Example color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
                 ),
-                child: const Text('Submit Answer'),
+                child: const Text('Submit Answer', style: TextStyle(color: Colors.white)),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
