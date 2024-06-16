@@ -31,7 +31,11 @@ MindEngage Mobile is the front-end application of the MindEngage educational pla
    ```bash
    flutter pub get
    ```
-4. Run the app:
+4. create a file dotenv that contains endpoint for backend
+   ```
+   MIND_ENGAGE_API=<backend endpoint>
+   ```
+5. Run the app:
    ```bash
    flutter run
    ```

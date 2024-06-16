@@ -7,7 +7,7 @@ import 'home_page.dart';
 import 'url_provider.dart';
 
 Future main() async {
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "dotenv");
   runApp(const MindEngageApp());
 }
 
