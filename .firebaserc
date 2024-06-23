@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "mind-engage"
+  },
+  "targets": {
+    "mind-engage": {
+      "hosting": {
+        "app": [
+          "mind-engage"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}
