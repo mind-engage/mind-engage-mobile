@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'topics_page.dart';
 import 'url_provider.dart';
+import 'courses_page.dart'; // Import CoursesPage
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _sessionId = "";
+  String _selectedCourseId = "00000000-0000-0000-0000-000000000000"; // Start with default course_id
   List<dynamic> lectures = [];
   List<dynamic> topics = [];
   bool _showWelcomeScreen = true; // Track which screen to show
@@ -35,9 +37,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> fetchLectures() async {
+  Future<void> fetchLectures(String courseId) async {
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/lectures?session_id=$_sessionId');
+    var url = Uri.parse('$baseUrl/lectures?session_id=$_sessionId&course_id=$courseId');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -67,12 +69,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> selectCourseAndFetchLectures() async {
+    final selectedCourseId = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CoursesPage()),
+    );
+    if (selectedCourseId != null) {
+      setState(() {
+        _selectedCourseId = selectedCourseId;
+      });
+      fetchLectures(selectedCourseId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child:  Text('MindEngage',  style: TextStyle(color: Colors.white))),
+        title: const Center(child: Text('MindEngage', style: TextStyle(color: Colors.white))),
         backgroundColor: Colors.deepPurpleAccent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu_book),
+            onPressed: selectCourseAndFetchLectures, // Add this action to change course_id
+          ),
+        ],
       ),
       body: _showWelcomeScreen ? _buildWelcomeScreen() : _buildLecturesList(),
     );
@@ -107,7 +128,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: fetchLectures,
+                onPressed: () => fetchLectures(_selectedCourseId),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),

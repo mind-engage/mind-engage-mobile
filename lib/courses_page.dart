@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'lecture_creation.dart'; // Import your lecture creation screen
-import 'custom_app_bar.dart'; // Import the custom app bar
-import 'user_profile.dart'; // Import UserProfileScreen
-import 'course_edit.dart'; // Import LectureEditScreen
-import 'course_creation.dart'; // Import LectureEditScreen
-
-import 'lecture_dashboard.dart'; // Import LectureEditScreen
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'custom_app_bar.dart';
 
 import 'url_provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class CoursesPage extends StatefulWidget {
   // final String creatorId = "Various Authors";
@@ -51,68 +44,32 @@ class CoursesPageState extends State<CoursesPage> {
         // Use the custom app bar
         title: 'MindEngage Creator',
         //subTitle: 'Course Dashboard',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              // Navigate to User Profile screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UserProfileScreen(user: widget.user),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: ListView.builder(
         itemCount: courses.length,
         itemBuilder: (context, index) {
-
-            background: Container(
-              color: Colors.red,
-              alignment: AlignmentDirectional.centerEnd,
-              child: Padding(
-                padding: EdgeInsets.only(right: 20.0),
-                child: Icon(
-                  Icons.delete,
-                  color: Colors.white,
+          return ListTile(
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: AssetImage(courses[index]['thumbnail'] ??
+                      'assets/images/default_thumbnail.png'), // Provide a default image path
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-            direction: DismissDirection.endToStart,
-            child: ListTile(
-              leading: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: AssetImage(courses[index]['thumbnail'] ??
-                        'assets/images/default_thumbnail.png'), // Provide a default image path
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              title: Text(courses[index]['course_name']),
-              subtitle: Text(
-                courses[index]['description'],
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              onTap: () {
-                // Navigate to Lecture Editing screen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LectureDashboard(
-                      user: widget.user,
-                      courseId: courses[index]['course_id']
-                    ),
-                  ),
-                );
-              },
+            title: Text(courses[index]['course_name']),
+            subtitle: Text(
+              courses[index]['description'],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () {
+              Navigator.pop(context, courses[index]['course_id']);
+            },
           );
         },
       ),
