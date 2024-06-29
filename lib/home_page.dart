@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
     });
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => TopicsPage(sessionId: _sessionId, topics: topics, lectureTitle: lectureTitle),
+        builder: (context) => TopicsPage(sessionId: _sessionId, topics: topics, lectureTitle: lectureTitle, lectureId: lectureId,),
       ),
     );
   }
@@ -90,7 +90,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.deepPurpleAccent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.menu_book),
+            icon: const Icon(Icons.menu_book, color: Colors.white),
             onPressed: selectCourseAndFetchLectures, // Add this action to change course_id
           ),
         ],

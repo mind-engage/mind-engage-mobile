@@ -5,12 +5,22 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'quiz_page.dart';
 import 'url_provider.dart';
 import 'custom_app_bar.dart';
+import 'transcript_page.dart';
 
 class TopicsPage extends StatefulWidget {
   final List<dynamic> topics;
   final String sessionId;
   final String lectureTitle;
-  const TopicsPage({super.key, required this.sessionId, required this.topics, required this.lectureTitle});
+  final String lectureId;
+
+  const TopicsPage({
+    super.key,
+    required this.sessionId,
+    required this.topics,
+    required this.lectureTitle,
+    required this.lectureId,
+  });
+
 
   @override
   _TopicsPageState createState() => _TopicsPageState();
@@ -26,12 +36,25 @@ class _TopicsPageState extends State<TopicsPage> {
     );
   }
 
+  void navigateToTranscript() async {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TranscriptPage(lectureId: widget.lectureId),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Topics',
-        subTitle: widget.lectureTitle, // Use lectureName for clarity
+        subTitle: widget.lectureTitle,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.description),
+            onPressed: navigateToTranscript, // Add action to navigate to transcript viewer
+          ),
+        ],
       ),
       body: ListView.separated(
         itemCount: widget.topics.length,
