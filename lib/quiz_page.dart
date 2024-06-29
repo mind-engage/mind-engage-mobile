@@ -207,7 +207,7 @@ class _QuizPageState extends State<QuizPage> {
             },
           ),
         ],
-        topicName: widget.topicTitle,    // Pass the topic name
+        description: widget.topicTitle,    // Pass the topic name
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

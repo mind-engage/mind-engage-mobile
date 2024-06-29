@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
-  final String? lectureName; // Add lectureName parameter
-  final String? topicName;    // Add topicName parameter
+  final String? subTitle; // Add lectureName parameter
+  final String? description;    // Add topicName parameter
 
   const CustomAppBar({
     Key? key,
     required this.title,
     this.actions,
-    this.lectureName,
-    this.topicName
+    this.subTitle,
+    this.description
   }) : super(key: key);
 
   @override
@@ -21,10 +21,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         crossAxisAlignment: CrossAxisAlignment.start, // Align to the start
         children: [
           Text(title, style: const TextStyle(color: Colors.white)),
-          if (lectureName != null)
-            Text(lectureName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
-          if (topicName != null)
-            Text(topicName!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
+          if (subTitle != null)
+            Text(subTitle!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
+          if (description != null)
+            Text(description!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w300, color: Colors.white)),
         ],
       ),
       backgroundColor: Colors.deepPurpleAccent,

@@ -31,7 +31,7 @@ class _TopicsPageState extends State<TopicsPage> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Topics',
-        lectureName: widget.lectureTitle, // Use lectureName for clarity
+        subTitle: widget.lectureTitle, // Use lectureName for clarity
       ),
       body: ListView.separated(
         itemCount: widget.topics.length,
