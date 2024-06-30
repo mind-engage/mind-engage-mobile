@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'url_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_tts/flutter_tts.dart'; // Import flutter_tts package
+import 'url_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 class TranscriptPage extends StatefulWidget {
   final String lectureId;
@@ -13,10 +16,32 @@ class TranscriptPage extends StatefulWidget {
   _TranscriptPageState createState() => _TranscriptPageState();
 }
 
+enum TtsState { playing, stopped, paused, continued }
+
 class _TranscriptPageState extends State<TranscriptPage> {
   String? _transcription;
   bool _isLoading = true;
   bool _hasError = false;
+  FlutterTts flutterTts = FlutterTts(); // Initialize flutter_tts
+
+  String? language;
+  String? engine;
+  double volume = 0.5;
+  double pitch = 1.0;
+  double rate = 0.5;
+  bool isCurrentLanguageInstalled = false;
+
+  TtsState ttsState = TtsState.stopped;
+
+  bool get isPlaying => ttsState == TtsState.playing;
+  bool get isStopped => ttsState == TtsState.stopped;
+  bool get isPaused => ttsState == TtsState.paused;
+  bool get isContinued => ttsState == TtsState.continued;
+
+  bool get isIOS => !kIsWeb && Platform.isIOS;
+  bool get isAndroid => !kIsWeb && Platform.isAndroid;
+  bool get isWindows => !kIsWeb && Platform.isWindows;
+  bool get isWeb => kIsWeb;
 
   @override
   void initState() {
@@ -24,6 +49,91 @@ class _TranscriptPageState extends State<TranscriptPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchTranscription();
     });
+    initTts();
+  }
+
+  dynamic initTts() {
+    flutterTts = FlutterTts();
+
+    _setAwaitOptions();
+
+    if (isAndroid) {
+      _getDefaultEngine();
+      _getDefaultVoice();
+    }
+
+    flutterTts.setStartHandler(() {
+      setState(() {
+        print("Playing");
+        ttsState = TtsState.playing;
+      });
+    });
+
+    flutterTts.setCompletionHandler(() {
+      setState(() {
+        print("Complete");
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setCancelHandler(() {
+      setState(() {
+        print("Cancel");
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setPauseHandler(() {
+      setState(() {
+        print("Paused");
+        ttsState = TtsState.paused;
+      });
+    });
+
+    flutterTts.setContinueHandler(() {
+      setState(() {
+        print("Continued");
+        ttsState = TtsState.continued;
+      });
+    });
+
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+        print("error: $msg");
+        ttsState = TtsState.stopped;
+      });
+    });
+  }
+  Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
+
+  Future<dynamic> _getEngines() async => await flutterTts.getEngines;
+
+  Future<void> _getDefaultEngine() async {
+    var engine = await flutterTts.getDefaultEngine;
+    if (engine != null) {
+      print(engine);
+    }
+  }
+
+  Future<void> _getDefaultVoice() async {
+    var voice = await flutterTts.getDefaultVoice;
+    if (voice != null) {
+      print(voice);
+    }
+  }
+
+  Future<void> _setAwaitOptions() async {
+    await flutterTts.awaitSpeakCompletion(true);
+  }
+
+  Future<void> _stop() async {
+    var result = await flutterTts.stop();
+    if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _pause() async {
+    var result = await flutterTts.pause();
+    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   Future<void> fetchTranscription() async {
@@ -60,12 +170,56 @@ class _TranscriptPageState extends State<TranscriptPage> {
     }
   }
 
+  List<String> _splitIntoChunks(String text, int chunkSize) {
+    List<String> chunks = [];
+    int start = 0;
+    while (start < text.length) {
+      int end = start + chunkSize;
+      if (end > text.length) {
+        end = text.length;
+      }
+      chunks.add(text.substring(start, end));
+      start = end;
+    }
+    return chunks;
+  }
+
+  Future<void> _speak() async {
+    if (_transcription != null && _transcription!.isNotEmpty) {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.setSpeechRate(0.5); // Set speech rate
+      await flutterTts.setVolume(1.0); // Set volume
+      await flutterTts.setPitch(1.0); // Set pitch
+      // Split the transcription into smaller chunks
+      List<String> chunks = _splitIntoChunks(_transcription!, 1000); // Adjust the chunk size as needed
+
+      for (String chunk in chunks) {
+        await flutterTts.speak(chunk);
+        // Wait for the chunk to finish speaking before moving to the next one
+        await flutterTts.awaitSpeakCompletion(true);
+      }
+      // await flutterTts.speak("Hello worlds");
+    }
+  }
+
+  @override
+  void dispose() {
+    flutterTts.stop(); // Stop any ongoing TTS when the widget is disposed
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transcript Viewer'),
         backgroundColor: Colors.deepPurpleAccent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.volume_up),
+            onPressed: _speak, // Add TTS button
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
