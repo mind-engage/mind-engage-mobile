@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'topics_page.dart';
 import 'url_provider.dart';
 import 'courses_page.dart'; // Import CoursesPage
+import 'transcript_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -164,17 +165,30 @@ class _HomePageState extends State<HomePage> {
             itemCount: lectures.length,
             separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
-              return InkWell(
-                onTap: () => fetchTopics(lectures[index]['lecture_id'].toString(), lectures[index]['lecture_title']),
-                child: ListTile(
-                  title: Text(lectures[index]['lecture_title']),
-                  subtitle: Text("License: ${lectures[index]['license']}"),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  tileColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+              return ListTile(
+                title: Text(lectures[index]['lecture_title']),
+                subtitle: Text("License: ${lectures[index]['license']}"),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.description, size: 20),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => TranscriptPage(lectureId: lectures[index]['lecture_id']),
+                          ),
+                        );
+                      },
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 16),
+                  ],
                 ),
+                tileColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () => fetchTopics(lectures[index]['lecture_id'].toString(), lectures[index]['lecture_title']),
               );
             },
           ),

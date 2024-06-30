@@ -47,14 +47,8 @@ class _TopicsPageState extends State<TopicsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Topics',
+        title: 'Quiz Topics',
         subTitle: widget.lectureTitle,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.description),
-            onPressed: navigateToTranscript, // Add action to navigate to transcript viewer
-          ),
-        ],
       ),
       body: ListView.separated(
         itemCount: widget.topics.length,
