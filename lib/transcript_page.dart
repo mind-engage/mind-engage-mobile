@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:flutter_tts/flutter_tts.dart'; // Import flutter_tts package
+import 'package:flutter_tts/flutter_tts.dart';
 import 'url_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
@@ -22,7 +22,7 @@ class _TranscriptPageState extends State<TranscriptPage> {
   String? _transcription;
   bool _isLoading = true;
   bool _hasError = false;
-  FlutterTts flutterTts = FlutterTts(); // Initialize flutter_tts
+  FlutterTts flutterTts = FlutterTts();
 
   String? language;
   String? engine;
@@ -30,6 +30,7 @@ class _TranscriptPageState extends State<TranscriptPage> {
   double pitch = 1.0;
   double rate = 0.5;
   bool isCurrentLanguageInstalled = false;
+  Map<String, String>? selectedVoice;
 
   TtsState ttsState = TtsState.stopped;
 
@@ -42,6 +43,8 @@ class _TranscriptPageState extends State<TranscriptPage> {
   bool get isAndroid => !kIsWeb && Platform.isAndroid;
   bool get isWindows => !kIsWeb && Platform.isWindows;
   bool get isWeb => kIsWeb;
+
+  List<dynamic> voices = [];
 
   @override
   void initState() {
@@ -103,7 +106,22 @@ class _TranscriptPageState extends State<TranscriptPage> {
         ttsState = TtsState.stopped;
       });
     });
+
+    _getVoices();
   }
+
+  Future<void> _getVoices() async {
+    var voices = await flutterTts.getVoices;
+    if (voices != null) {
+      setState(() {
+        this.voices = List<Map<String, String>>.from(
+            voices.where((voice) => (voice['name'] as String).startsWith('en')).map((voice) => Map<String, String>.from(voice))
+        );
+      });
+    }
+  }
+
+
   Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
 
   Future<dynamic> _getEngines() async => await flutterTts.getEngines;
@@ -187,24 +205,26 @@ class _TranscriptPageState extends State<TranscriptPage> {
   Future<void> _speak() async {
     if (_transcription != null && _transcription!.isNotEmpty) {
       await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.5); // Set speech rate
-      await flutterTts.setVolume(1.0); // Set volume
-      await flutterTts.setPitch(1.0); // Set pitch
-      // Split the transcription into smaller chunks
-      List<String> chunks = _splitIntoChunks(_transcription!, 1000); // Adjust the chunk size as needed
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setPitch(1.0);
+
+      if (selectedVoice != null) {
+        await flutterTts.setVoice(selectedVoice!);
+      }
+
+      List<String> chunks = _splitIntoChunks(_transcription!, 1000);
 
       for (String chunk in chunks) {
         await flutterTts.speak(chunk);
-        // Wait for the chunk to finish speaking before moving to the next one
         await flutterTts.awaitSpeakCompletion(true);
       }
-      // await flutterTts.speak("Hello worlds");
     }
   }
 
   @override
   void dispose() {
-    flutterTts.stop(); // Stop any ongoing TTS when the widget is disposed
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -217,7 +237,7 @@ class _TranscriptPageState extends State<TranscriptPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.volume_up),
-            onPressed: _speak, // Add TTS button
+            onPressed: _speak,
           ),
         ],
       ),
@@ -227,9 +247,30 @@ class _TranscriptPageState extends State<TranscriptPage> {
           ? Center(child: Text('Failed to load transcription'))
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Text(
-          _transcription ?? 'No transcription available',
-          style: const TextStyle(fontSize: 16),
+        child: Column(
+          children: [
+            if (voices.isNotEmpty)
+              DropdownButton<Map<String, String>>(
+                hint: Text("Select Voice"),
+                value: selectedVoice,
+                onChanged: (Map<String, String>? newValue) {
+                  setState(() {
+                    selectedVoice = newValue;
+                  });
+                },
+                items: voices.map<DropdownMenuItem<Map<String, String>>>((voice) {
+                  return DropdownMenuItem<Map<String, String>>(
+                    value: voice,
+                    child: Text(voice['name'] ?? ''),
+                  );
+                }).toList(),
+              ),
+            SizedBox(height: 20),
+            Text(
+              _transcription ?? 'No transcription available',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
         ),
       ),
     );
