@@ -42,7 +42,7 @@ class CoursesPageState extends State<CoursesPage> {
     return Scaffold(
       appBar: CustomAppBar(
         // Use the custom app bar
-        title: 'MindEngage Creator',
+        title: 'MindEngage',
         //subTitle: 'Course Dashboard',
       ),
       body: ListView.builder(
