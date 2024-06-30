@@ -45,6 +45,7 @@ class _TranscriptPageState extends State<TranscriptPage> {
   bool get isWeb => kIsWeb;
 
   List<dynamic> voices = [];
+  bool isSpeaking = false;
 
   @override
   void initState() {
@@ -204,26 +205,47 @@ class _TranscriptPageState extends State<TranscriptPage> {
 
   Future<void> _speak() async {
     if (_transcription != null && _transcription!.isNotEmpty) {
-      await flutterTts.setLanguage("en-US");
-      await flutterTts.setSpeechRate(0.5);
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setPitch(1.0);
-
-      if (selectedVoice != null) {
-        await flutterTts.setVoice(selectedVoice!);
+      // Stop any ongoing TTS if a new request is made
+      if (isSpeaking) {
+        await flutterTts.stop();
+        isSpeaking = false;
       }
 
-      List<String> chunks = _splitIntoChunks(_transcription!, 1000);
+      try {
+        // Configure TTS settings only once
+        await flutterTts.setLanguage("en-US");
+        await flutterTts.setSpeechRate(0.5);
+        await flutterTts.setVolume(1.0);
+        await flutterTts.setPitch(1.0);
 
-      for (String chunk in chunks) {
-        await flutterTts.speak(chunk);
-        await flutterTts.awaitSpeakCompletion(true);
+        if (selectedVoice != null) {
+          await flutterTts.setVoice(selectedVoice!);
+        }
+
+        List<String> chunks = _splitIntoChunks(_transcription!, 1000);
+
+        isSpeaking = true; // Set the flag to indicate speaking
+
+        for (String chunk in chunks) {
+          // Check if a stop request has been made externally
+          if (!isSpeaking) {
+            break; // Exit the loop if TTS was stopped
+          }
+          await flutterTts.speak(chunk);
+          await flutterTts.awaitSpeakCompletion(true);
+        }
+      } catch (e) {
+        print("An error occurred during TTS: $e");
+        // Handle the error (e.g., display an error message to the user)
+      } finally {
+        isSpeaking = false; // Reset the speaking flag after completion or error
       }
     }
   }
 
   @override
   void dispose() {
+    isSpeaking = false; // Ensure TTS is marked as stopped on dispose
     flutterTts.stop();
     super.dispose();
   }
