@@ -39,7 +39,7 @@ class _TopicsPageState extends State<TopicsPage> {
   void navigateToTranscript() async {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => TranscriptPage(lectureId: widget.lectureId),
+        builder: (context) => TranscriptPage(lectureId: widget.lectureId, lectureTitle: widget.lectureTitle),
       ),
     );
   }

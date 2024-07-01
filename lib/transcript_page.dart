@@ -6,11 +6,13 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'url_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
+import 'dart:async';
+import 'custom_app_bar.dart';
 
 class TranscriptPage extends StatefulWidget {
   final String lectureId;
-
-  const TranscriptPage({super.key, required this.lectureId});
+  final String lectureTitle;
+  const TranscriptPage({super.key, required this.lectureId, required this.lectureTitle});
 
   @override
   _TranscriptPageState createState() => _TranscriptPageState();
@@ -46,14 +48,39 @@ class _TranscriptPageState extends State<TranscriptPage> {
 
   List<dynamic> voices = [];
   bool isSpeaking = false;
+  int _lastSpokenPosition = 0;
+  StreamSubscription<dynamic>? _ttsProgressSubscription;
+  List<String> _chunks = []; // Store the text chunks
+  int _currentChunkIndex = 0; // Track the currently playing chunk
 
   @override
   void initState() {
     super.initState();
+    _initTtsProgressListener();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchTranscription();
     });
     initTts();
+  }
+
+  @override
+  void dispose() {
+    isSpeaking = false;
+    flutterTts.stop();
+    _ttsProgressSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _initTtsProgressListener() {
+    /*
+    _ttsProgressSubscription = flutterTts.getProgressStream().listen((event) {
+      if (event is int && event >= 0) {
+        setState(() {
+          _lastSpokenPosition = event;
+        });
+      }
+    });
+    */
   }
 
   dynamic initTts() {
@@ -75,8 +102,16 @@ class _TranscriptPageState extends State<TranscriptPage> {
 
     flutterTts.setCompletionHandler(() {
       setState(() {
-        print("Complete");
-        ttsState = TtsState.stopped;
+        print("Chunk Complete");
+        // Move to the next chunk if available
+        if (_currentChunkIndex < _chunks.length - 1) {
+          _currentChunkIndex++;
+          _speakChunk(_chunks[_currentChunkIndex]); // Speak the next chunk
+        } else {
+          print("Complete");
+          ttsState = TtsState.stopped;
+          _currentChunkIndex = 0; // Reset to the beginning
+        }
       });
     });
 
@@ -122,7 +157,6 @@ class _TranscriptPageState extends State<TranscriptPage> {
     }
   }
 
-
   Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
 
   Future<dynamic> _getEngines() async => await flutterTts.getEngines;
@@ -145,16 +179,6 @@ class _TranscriptPageState extends State<TranscriptPage> {
     await flutterTts.awaitSpeakCompletion(true);
   }
 
-  Future<void> _stop() async {
-    var result = await flutterTts.stop();
-    if (result == 1) setState(() => ttsState = TtsState.stopped);
-  }
-
-  Future<void> _pause() async {
-    var result = await flutterTts.pause();
-    if (result == 1) setState(() => ttsState = TtsState.paused);
-  }
-
   Future<void> fetchTranscription() async {
     String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
     var url = Uri.parse('$baseUrl/lecture/transcription/${widget.lectureId}');
@@ -165,6 +189,7 @@ class _TranscriptPageState extends State<TranscriptPage> {
         var data = jsonDecode(response.body);
         setState(() {
           _transcription = data['transcription'];
+          _chunks = _splitIntoChunks(_transcription!, 1000);
           _isLoading = false;
         });
       } else {
@@ -204,64 +229,65 @@ class _TranscriptPageState extends State<TranscriptPage> {
   }
 
   Future<void> _speak() async {
-    if (_transcription != null && _transcription!.isNotEmpty) {
-      // Stop any ongoing TTS if a new request is made
+    if (_chunks.isNotEmpty) {
       if (isSpeaking) {
         await flutterTts.stop();
         isSpeaking = false;
-      }
-
-      try {
-        // Configure TTS settings only once
-        await flutterTts.setLanguage("en-US");
-        await flutterTts.setSpeechRate(0.5);
-        await flutterTts.setVolume(1.0);
-        await flutterTts.setPitch(1.0);
-
-        if (selectedVoice != null) {
-          await flutterTts.setVoice(selectedVoice!);
-        }
-
-        List<String> chunks = _splitIntoChunks(_transcription!, 1000);
-
-        isSpeaking = true; // Set the flag to indicate speaking
-
-        for (String chunk in chunks) {
-          // Check if a stop request has been made externally
-          if (!isSpeaking) {
-            break; // Exit the loop if TTS was stopped
-          }
-          await flutterTts.speak(chunk);
-          await flutterTts.awaitSpeakCompletion(true);
-        }
-      } catch (e) {
-        print("An error occurred during TTS: $e");
-        // Handle the error (e.g., display an error message to the user)
-      } finally {
-        isSpeaking = false; // Reset the speaking flag after completion or error
+      } else {
+        await _speakChunk(_chunks[_currentChunkIndex]);
       }
     }
   }
 
-  @override
-  void dispose() {
-    isSpeaking = false; // Ensure TTS is marked as stopped on dispose
-    flutterTts.stop();
-    super.dispose();
+  // Function to speak a single chunk
+  Future<void> _speakChunk(String chunk) async {
+    try {
+      await flutterTts.setLanguage("en-US");
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setPitch(1.0);
+
+      if (selectedVoice != null) {
+        await flutterTts.setVoice(selectedVoice!);
+      }
+
+      isSpeaking = true;
+      await flutterTts.speak(chunk);
+    } catch (e) {
+      print("An error occurred during TTS: $e");
+    }
+  }
+
+  Future<void> _stop() async {
+    _currentChunkIndex = 0; // Reset chunk index
+    var result = await flutterTts.stop();
+    if (result == 1) setState(() => ttsState = TtsState.stopped);
+    isSpeaking = false;
+  }
+
+
+  Future<void> _skipPrevious() async {
+    if (_currentChunkIndex > 0) {
+      _currentChunkIndex--; // Decrement the index first
+      await flutterTts.stop(); // Stop the current playback
+      await _speakChunk(_chunks[_currentChunkIndex]); // Speak the previous chunk
+    }
+  }
+
+  Future<void> _skipNext() async {
+    if (_currentChunkIndex < _chunks.length - 1) {
+      _currentChunkIndex++; // Increment the index first
+      await flutterTts.stop(); // Stop current playback
+      await _speakChunk(_chunks[_currentChunkIndex]); // Speak the next chunk
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transcript Viewer'),
-        backgroundColor: Colors.deepPurpleAccent,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.volume_up),
-            onPressed: _speak,
-          ),
-        ],
+      appBar: CustomAppBar(
+        title: 'Transcript Viewer',
+        subTitle: widget.lectureTitle,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -271,26 +297,54 @@ class _TranscriptPageState extends State<TranscriptPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            if (voices.isNotEmpty)
-              DropdownButton<Map<String, String>>(
-                hint: Text("Select Voice"),
+            SizedBox(height: 20),
+            Text(
+              _transcription ?? 'No transcription available',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              icon: Icon(isSpeaking ? Icons.stop : Icons.volume_up),
+              onPressed: isSpeaking ? _stop : _speak,
+              iconSize: 35,
+            ),
+            IconButton(
+              icon: Icon(Icons.skip_previous),
+              onPressed: _skipPrevious,
+              iconSize: 35,
+            ),
+
+            IconButton(
+              icon: Icon(Icons.skip_next),
+              onPressed: _skipNext,
+              iconSize: 35,
+            ),
+            Expanded(
+              child: voices.isNotEmpty
+                  ? DropdownButton<Map<String, String>>(
+                isExpanded: true,
+                hint: Center(child: Text("Select Voice")),
                 value: selectedVoice,
                 onChanged: (Map<String, String>? newValue) {
                   setState(() {
                     selectedVoice = newValue;
                   });
                 },
-                items: voices.map<DropdownMenuItem<Map<String, String>>>((voice) {
+                items: voices
+                    .map<DropdownMenuItem<Map<String, String>>>((voice) {
                   return DropdownMenuItem<Map<String, String>>(
                     value: voice,
-                    child: Text(voice['name'] ?? ''),
+                    child: Center(child: Text(voice['name'] ?? '')),
                   );
                 }).toList(),
-              ),
-            SizedBox(height: 20),
-            Text(
-              _transcription ?? 'No transcription available',
-              style: const TextStyle(fontSize: 16),
+              )
+                  : Center(child: CircularProgressIndicator()),
             ),
           ],
         ),
