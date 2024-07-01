@@ -151,8 +151,10 @@ class _TranscriptPageState extends State<TranscriptPage> {
     var voices = await flutterTts.getVoices;
     if (voices != null) {
       setState(() {
-        this.voices = List<Map<String, String>>.from(
-            voices.map((voice) => Map<String, String>.from(voice)));
+        // Filter voices for 'es-US' locale
+        this.voices = List<Map<String, String>>.from(voices
+            .where((voice) => voice['locale'] == 'en-US')
+            .map((voice) => Map<String, String>.from(voice)));
       });
     }
   }
@@ -292,19 +294,19 @@ class _TranscriptPageState extends State<TranscriptPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _hasError
-              ? Center(child: Text('Failed to load transcription'))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 20),
-                      Text(
-                        _transcription ?? 'No transcription available',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
+          ? Center(child: Text('Failed to load transcription'))
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Text(
+              _transcription ?? 'No transcription available',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -327,22 +329,22 @@ class _TranscriptPageState extends State<TranscriptPage> {
             Expanded(
               child: voices.isNotEmpty
                   ? DropdownButton<Map<String, String>>(
-                      isExpanded: true,
-                      hint: Center(child: Text("Select Voice")),
-                      value: selectedVoice,
-                      onChanged: (Map<String, String>? newValue) {
-                        setState(() {
-                          selectedVoice = newValue;
-                        });
-                      },
-                      items: voices
-                          .map<DropdownMenuItem<Map<String, String>>>((voice) {
-                        return DropdownMenuItem<Map<String, String>>(
-                          value: voice,
-                          child: Center(child: Text(voice['name'] ?? '')),
-                        );
-                      }).toList(),
-                    )
+                isExpanded: true,
+                hint: Center(child: Text("Select Voice")),
+                value: selectedVoice,
+                onChanged: (Map<String, String>? newValue) {
+                  setState(() {
+                    selectedVoice = newValue;
+                  });
+                },
+                items: voices
+                    .map<DropdownMenuItem<Map<String, String>>>((voice) {
+                  return DropdownMenuItem<Map<String, String>>(
+                    value: voice,
+                    child: Center(child: Text(voice['name'] ?? '')),
+                  );
+                }).toList(),
+              )
                   : Center(child: CircularProgressIndicator()),
             ),
           ],
