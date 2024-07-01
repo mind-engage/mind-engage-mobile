@@ -68,7 +68,12 @@ class CoursesPageState extends State<CoursesPage> {
               overflow: TextOverflow.ellipsis,
             ),
             onTap: () {
-              Navigator.pop(context, courses[index]['course_id']);
+              Map<String, dynamic> selectedCourse = {
+                'course_id': courses[index]['course_id'],
+                'course_name': courses[index]['course_name'],
+              };
+              // Return the map
+              Navigator.pop(context, selectedCourse);
             },
           );
         },

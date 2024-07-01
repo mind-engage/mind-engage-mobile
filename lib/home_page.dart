@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'topics_page.dart';
+import 'lectures_page.dart'; // Import the renamed LecturesPage
 import 'url_provider.dart';
-import 'courses_page.dart'; // Import CoursesPage
-import 'transcript_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,10 +13,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _sessionId = "";
-  String _selectedCourseId = "00000000-0000-0000-0000-000000000000"; // Start with default course_id
-  List<dynamic> lectures = [];
-  List<dynamic> topics = [];
-  bool _showWelcomeScreen = true; // Track which screen to show
 
   @override
   void initState() {
@@ -38,65 +32,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> fetchLectures(String courseId) async {
-    String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/lectures?session_id=$_sessionId&course_id=$courseId');
-    var response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      setState(() {
-        lectures = jsonDecode(response.body);
-        _showWelcomeScreen = false; // Switch to lecture list screen
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error loading lectures. Please try again.'),
-      ));
-    }
-  }
-
-  void fetchTopics(String lectureId, String lectureTitle) async {
-    String baseUrl = BaseUrlProvider.of(context)!.baseUrl;
-    var url = Uri.parse('$baseUrl/topics?lecture_id=$lectureId&session_id=$_sessionId');
-    var response = await http.get(url);
-    var data = jsonDecode(response.body);
-    setState(() {
-      topics = data;
-    });
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TopicsPage(sessionId: _sessionId, topics: topics, lectureTitle: lectureTitle, lectureId: lectureId,),
-      ),
-    );
-  }
-
-  Future<void> selectCourseAndFetchLectures() async {
-    final selectedCourseId = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CoursesPage()),
-    );
-    if (selectedCourseId != null) {
-      setState(() {
-        _selectedCourseId = selectedCourseId;
-      });
-      fetchLectures(selectedCourseId);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Center(child: Text('MindEngage', style: TextStyle(color: Colors.white))),
         backgroundColor: Colors.deepPurpleAccent,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book, color: Colors.white),
-            onPressed: selectCourseAndFetchLectures, // Add this action to change course_id
-          ),
-        ],
       ),
-      body: _showWelcomeScreen ? _buildWelcomeScreen() : _buildLecturesList(),
+      body: _buildWelcomeScreen(),
     );
   }
 
@@ -129,7 +72,15 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () => fetchLectures(_selectedCourseId),
+                onPressed: () {
+                  // Navigate directly to LecturesPage
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LecturesPage(sessionId: _sessionId),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
@@ -147,53 +98,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLecturesList() {
-    return Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Available Lectures',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            itemCount: lectures.length,
-            separatorBuilder: (context, index) => const Divider(),
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(lectures[index]['lecture_title']),
-                subtitle: Text("License: ${lectures[index]['license']}"),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.description, size: 20),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => TranscriptPage(lectureId: lectures[index]['lecture_id']),
-                          ),
-                        );
-                      },
-                    ),
-                    const Icon(Icons.arrow_forward_ios, size: 16),
-                  ],
-                ),
-                tileColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                onTap: () => fetchTopics(lectures[index]['lecture_id'].toString(), lectures[index]['lecture_title']),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }
