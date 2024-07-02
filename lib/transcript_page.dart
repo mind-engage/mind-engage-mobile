@@ -49,7 +49,6 @@ class _TranscriptPageState extends State<TranscriptPage> {
 
   List<dynamic> voices = [];
   bool isSpeaking = false;
-  int _lastSpokenPosition = 0;
   StreamSubscription<dynamic>? _ttsProgressSubscription;
   List<String> _chunks = []; // Store the text chunks
   int _currentChunkIndex = 0; // Track the currently playing chunk
@@ -57,7 +56,6 @@ class _TranscriptPageState extends State<TranscriptPage> {
   @override
   void initState() {
     super.initState();
-    _initTtsProgressListener();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchTranscription();
     });
@@ -70,18 +68,6 @@ class _TranscriptPageState extends State<TranscriptPage> {
     flutterTts.stop();
     _ttsProgressSubscription?.cancel();
     super.dispose();
-  }
-
-  void _initTtsProgressListener() {
-    /*
-    _ttsProgressSubscription = flutterTts.getProgressStream().listen((event) {
-      if (event is int && event >= 0) {
-        setState(() {
-          _lastSpokenPosition = event;
-        });
-      }
-    });
-    */
   }
 
   dynamic initTts() {
@@ -102,18 +88,20 @@ class _TranscriptPageState extends State<TranscriptPage> {
     });
 
     flutterTts.setCompletionHandler(() {
-      setState(() {
-        print("Chunk Complete");
-        // Move to the next chunk if available
-        if (_currentChunkIndex < _chunks.length - 1) {
-          _currentChunkIndex++;
-          _speakChunk(_chunks[_currentChunkIndex]); // Speak the next chunk
-        } else {
-          print("Complete");
-          ttsState = TtsState.stopped;
-          _currentChunkIndex = 0; // Reset to the beginning
-        }
-      });
+      if (isSpeaking) {
+        setState(() {
+          print("Chunk Complete");
+          // Move to the next chunk if available
+          if (_currentChunkIndex < _chunks.length - 1) {
+            _currentChunkIndex++;
+            _speakChunk(_chunks[_currentChunkIndex]); // Speak the next chunk
+          } else {
+            print("Complete");
+            ttsState = TtsState.stopped;
+            _currentChunkIndex = 0; // Reset to the beginning
+          }
+        });
+      }
     });
 
     flutterTts.setCancelHandler(() {
@@ -294,19 +282,19 @@ class _TranscriptPageState extends State<TranscriptPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _hasError
-          ? Center(child: Text('Failed to load transcription'))
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            SizedBox(height: 20),
-            Text(
-              _transcription ?? 'No transcription available',
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
+              ? Center(child: Text('Failed to load transcription'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Text(
+                        _transcription ?? 'No transcription available',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -329,22 +317,22 @@ class _TranscriptPageState extends State<TranscriptPage> {
             Expanded(
               child: voices.isNotEmpty
                   ? DropdownButton<Map<String, String>>(
-                isExpanded: true,
-                hint: Center(child: Text("Select Voice")),
-                value: selectedVoice,
-                onChanged: (Map<String, String>? newValue) {
-                  setState(() {
-                    selectedVoice = newValue;
-                  });
-                },
-                items: voices
-                    .map<DropdownMenuItem<Map<String, String>>>((voice) {
-                  return DropdownMenuItem<Map<String, String>>(
-                    value: voice,
-                    child: Center(child: Text(voice['name'] ?? '')),
-                  );
-                }).toList(),
-              )
+                      isExpanded: true,
+                      hint: Center(child: Text("Select Voice")),
+                      value: selectedVoice,
+                      onChanged: (Map<String, String>? newValue) {
+                        setState(() {
+                          selectedVoice = newValue;
+                        });
+                      },
+                      items: voices
+                          .map<DropdownMenuItem<Map<String, String>>>((voice) {
+                        return DropdownMenuItem<Map<String, String>>(
+                          value: voice,
+                          child: Center(child: Text(voice['name'] ?? '')),
+                        );
+                      }).toList(),
+                    )
                   : Center(child: CircularProgressIndicator()),
             ),
           ],
